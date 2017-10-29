@@ -30,7 +30,7 @@ class HistoryRepo
      *
      * @return History
      */
-    public function createFromParams(string $cacheKey, string $address, array $latLong) : History
+    public function create(string $cacheKey, string $address, array $latLong) : History
     {
         $params = compact('address') + $latLong;
 

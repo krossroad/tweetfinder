@@ -49,7 +49,7 @@ class TwitterService
     {
         $cacheKey = str_slug($address);
 
-        $this->historyRepo->createFromParams($cacheKey, $address, $latLong);
+        $this->historyRepo->create($cacheKey, $address, $latLong);
 
         return $this->cache->has($cacheKey) ? $this->cache->get($cacheKey)
             : $this->fetchTweets($address, $latLong, $searchRadius, $cacheKey);
@@ -126,7 +126,7 @@ class TwitterService
     }
 
     /**
-     * @param array $latLong
+     * @param array $latLng
      * @param int $searchRadius
      *
      * @return string
