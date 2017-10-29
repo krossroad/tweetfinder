@@ -21,8 +21,19 @@ RUN apt-get update && apt-get -y upgrade && \
                        php7.0-ldap \
                        php7.0-zip \
                        php7.0-xml \
+                       php-pear \
+                       php7.0-dev \
+                       libsasl2-dev \
                        php7.0-curl && \
                        apt-get clean
+
+RUN mkdir -p /usr/local/openssl/include/openssl/ && \
+    ln -s /usr/include/openssl/evp.h /usr/local/openssl/include/openssl/evp.h && \
+    mkdir -p /usr/local/openssl/lib/ && \
+    ln -s /usr/lib/x86_64-linux-gnu/libssl.a /usr/local/openssl/lib/libssl.a && \
+    ln -s /usr/lib/x86_64-linux-gnu/libssl.so /usr/local/openssl/lib/
+
+RUN pecl install mongodb
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && chmod +x /usr/local/bin/composer
 
@@ -33,6 +44,10 @@ RUN curl -sL https://deb.nodesource.com/setup_6.x -o nodesource_setup.sh && \
 
 WORKDIR /var/www
 #Add confs
+RUN echo "extension=mongodb.so" > /etc/php/7.0/fpm/conf.d/20-mongodb.ini && \
+    echo "extension=mongodb.so" > /etc/php/7.0/cli/conf.d/20-mongodb.ini && \
+    echo "extension=mongodb.so" > /etc/php/7.0/mods-available/mongodb.ini
+
 ADD conf/www.conf /etc/php/7.0/fpm/pool.d/www.conf
 ADD conf/supervisor.conf /etc/supervisord.conf
 ADD conf/nginx.conf /etc/nginx/nginx.conf

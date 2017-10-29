@@ -10,21 +10,16 @@ services:
             - "80:80"
             - "443:443"
         links:
-            - postgres
+            - mongodb
             - redis
         environment:
             DEBUG: 'true'
 
-    postgres:
-        image: onjin/alpine-postgres:9.5
+    mongodb:
+        image: mvertes/alpine-mongo:3.2.3
         restart: unless-stopped
         ports:
-            - "5432:5432"
-        environment:
-            LC_ALL: C.UTF-8
-            POSTGRES_DB: tweetfinder
-            POSTGRES_USER: tweetfinder
-            POSTGRES_PASSWORD: secret
+            - "27017:27017"
 
     redis:
         image: sickp/alpine-redis:3.2.2
