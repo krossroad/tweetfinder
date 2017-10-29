@@ -24,12 +24,11 @@ class TweetsController extends Controller
             'lng' => 'required|numeric',
         ]);
 
-        $query        = $request->query('query');
-        $latLong      = $request->only(['lat', 'lng']);
-        $searchRadius = 50;
+        $query   = $request->query('query');
+        $latLong = $request->only(['lat', 'lng']);
 
         return response()->json([
-            'tweets' => $this->twitterService->getTweetsByLocation($query, $latLong, $searchRadius),
+            'tweets' => $this->twitterService->getTweetsByLocation($query, $latLong),
         ]);
     }
 }

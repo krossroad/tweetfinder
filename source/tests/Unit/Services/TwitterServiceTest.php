@@ -6,6 +6,7 @@ namespace Tests\Unit\Services;
 use App\Repositories\HistoryRepo;
 use App\Services\TwitterService;
 use Illuminate\Cache\Repository;
+use Illuminate\Config\Repository as Config;
 use Mockery as m;
 use Tests\TestCase;
 use Thujohn\Twitter\Twitter;
@@ -15,6 +16,7 @@ use Thujohn\Twitter\Twitter;
  */
 class TwitterServiceTest extends TestCase
 {
+    private $configMock;
     private $historyRepoMock;
     private $cacheMock;
     private $twitterMock;
@@ -26,6 +28,7 @@ class TwitterServiceTest extends TestCase
         $this->twitterMock     = m::mock(Twitter::class);
         $this->cacheMock       = m::mock(Repository::class);
         $this->historyRepoMock = m::mock(HistoryRepo::class);
+        $this->configMock      = m::mock(Config::class);
     }
 
     /**
@@ -39,7 +42,8 @@ class TwitterServiceTest extends TestCase
         $latLng       = [];
         $address      = 'Grand Palace';
 
-        $tweetService = new TwitterService($this->twitterMock, $this->cacheMock, $this->historyRepoMock);
+        $tweetService = new TwitterService($this->twitterMock, $this->cacheMock, $this->historyRepoMock,
+            $this->configMock);
 
         $this->history_repo_create_expectation($cacheKey, $address, $latLng);
 
@@ -68,6 +72,7 @@ class TwitterServiceTest extends TestCase
      */
     public function it_should_hit_tweet_api_if_cache_not_exists($expectedResult, $apiResult)
     {
+        $cacheTtl     = 60;
         $searchRadius = 50;
         $cacheKey     = 'grand-palace';
         $latLng       = ['lat' => 12, 'lng' => 23];
@@ -78,7 +83,8 @@ class TwitterServiceTest extends TestCase
             'count' => 150,
         ];
 
-        $tweetService = new TwitterService($this->twitterMock, $this->cacheMock, $this->historyRepoMock);
+        $tweetService = new TwitterService($this->twitterMock, $this->cacheMock, $this->historyRepoMock,
+            $this->configMock);
 
         $this->cacheMock
             ->shouldReceive('has')
@@ -91,7 +97,21 @@ class TwitterServiceTest extends TestCase
         $this->cacheMock
             ->shouldReceive('put')
             ->once()
-            ->with($cacheKey, $expectedResult, 10);
+            ->with($cacheKey, $expectedResult, $cacheTtl);
+
+        $this->configMock
+            ->shouldReceive('get')
+            ->with('tweet-finder.cache-ttl', $cacheTtl)
+            ->andReturn(60)
+            ->shouldReceive('get')
+            ->with('tweet-finder.search-radius', 50)
+            ->andReturn(50)
+            ->shouldReceive('get')
+            ->with('tweet-finder.search-radius-unit', 'km')
+            ->andReturn('km')
+            ->shouldReceive('get')
+            ->with('tweet-finder.tweet-limit', 150)
+            ->andReturn(150);
 
         $apiResult = json_decode(json_encode($apiResult));
 

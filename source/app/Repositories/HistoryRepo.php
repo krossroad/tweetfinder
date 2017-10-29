@@ -52,7 +52,7 @@ class HistoryRepo
     {
         return $this->history
             ->orderBy('count', 'desc')
-            ->take($this->config->get('history.history_limit'))
+            ->take($this->config->get('tweet-finder.history-limit'))
             ->get()
             ->toArray();
     }

@@ -18,7 +18,7 @@ class HistoryRepoTest extends TestCase
     private $historyMock;
 
     /**
-     * 
+     *
      */
     public function setUp()
     {

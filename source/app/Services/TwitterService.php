@@ -5,6 +5,7 @@ namespace App\Services;
 
 use App\Repositories\HistoryRepo;
 use Illuminate\Cache\Repository as Cache;
+use Illuminate\Config\Repository as Config;
 use Thujohn\Twitter\Twitter;
 
 class TwitterService
@@ -25,55 +26,66 @@ class TwitterService
     private $historyRepo;
 
     /**
+     * @var Config
+     */
+    private $config;
+
+    /**
      * TwitterService constructor.
      *
      * @param Twitter $twitter
      * @param Cache $cache
      * @param HistoryRepo $historyRepo
+     * @param Config $config
      */
-    public function __construct(Twitter $twitter, Cache $cache, HistoryRepo $historyRepo)
+    public function __construct(Twitter $twitter, Cache $cache, HistoryRepo $historyRepo, Config $config)
     {
         $this->twitter     = $twitter;
         $this->cache       = $cache;
         $this->historyRepo = $historyRepo;
+        $this->config      = $config;
     }
 
     /**
      * @param string $address
      * @param array $latLong
-     * @param int $searchRadius
      *
      * @return array
+     *
      */
-    public function getTweetsByLocation(string $address, array $latLong, int $searchRadius) : array
+    public function getTweetsByLocation(string $address, array $latLong) : array
     {
         $cacheKey = str_slug($address);
 
         $this->historyRepo->create($cacheKey, $address, $latLong);
 
         return $this->cache->has($cacheKey) ? $this->cache->get($cacheKey)
-            : $this->fetchTweets($address, $latLong, $searchRadius, $cacheKey);
+            : $this->fetchTweets($address, $latLong, $cacheKey);
     }
 
     /**
      * @param string $address
      * @param array $latLong
-     * @param int $searchRadius
      * @param string $cacheKey
      *
      * @return array
+     * @internal param int $searchRadius
      */
-    private function fetchTweets(string $address, array $latLong, int $searchRadius, string $cacheKey)
+    private function fetchTweets(string $address, array $latLong, string $cacheKey)
     {
+        $catchTtl     = $this->config->get('tweet-finder.cache-ttl', 60);
+        $searchRadius = $this->config->get('tweet-finder.search-radius', 50);
+        $tweetLimit   = $this->config->get('tweet-finder.tweet-limit', 150);
+
         $rawTweets = $this->twitter->getSearch([
             'q' => $address,
             'geocode' => $this->generateGeocode($latLong, $searchRadius),
-            'count' => 150,
+            'count' => $tweetLimit,
         ]);
         $result    = $this->processTweets($rawTweets);
 
         if (!empty($result)) {
-            $this->cache->put($cacheKey, $result, 10);
+            $this->cache->put($cacheKey, $result, $catchTtl);
         }
 
         return $result;
@@ -133,7 +145,7 @@ class TwitterService
      */
     private function generateGeocode(array $latLng, int $searchRadius) : string
     {
-        $distanceUnit = 'km';
+        $distanceUnit = $this->config->get('tweet-finder.search-radius-unit', 'km');
 
         return sprintf('%f,%f,%d%s', $latLng['lat'], $latLng['lng'], $searchRadius, $distanceUnit);
     }
