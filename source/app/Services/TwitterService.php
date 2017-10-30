@@ -51,7 +51,6 @@ class TwitterService
      * @param array $latLong
      *
      * @return array
-     *
      */
     public function getTweetsByLocation(string $address, array $latLong) : array
     {
@@ -71,7 +70,7 @@ class TwitterService
      * @return array
      * @internal param int $searchRadius
      */
-    private function fetchTweets(string $address, array $latLong, string $cacheKey)
+    private function fetchTweets(string $address, array $latLong, string $cacheKey) : array
     {
         $catchTtl     = $this->config->get('tweet-finder.cache-ttl', 60);
         $searchRadius = $this->config->get('tweet-finder.search-radius', 50);
